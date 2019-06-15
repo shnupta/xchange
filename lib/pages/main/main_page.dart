@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import 'dart:math' as math;
+
 import 'package:xchange/exchange_rates/exchange_rates.dart';
 
 class MainPage extends StatefulWidget {
@@ -16,8 +18,16 @@ class _MainPageState extends State<MainPage> {
 
   bool _isTopToBottom = true;
 
-  Color red = Color(0xFFF46262);
-  Color white = Color(0xFFFFFFFF);
+  static List<Color> colors = [
+    Color(0xFF456990),
+    Color(0xFFCEB992),
+    Color(0xFF797A9E),
+    Color(0xFFF48B8B),
+    Color(0xFF92BDA3)
+  ];
+
+  Color primary = colors[math.Random().nextInt(5)]; // The accent type color
+  Color secondary = Color(0xFFFFFFFF); // Probably white
 
   TextEditingController _topController = TextEditingController();
   TextEditingController _bottomController = TextEditingController();
@@ -27,9 +37,7 @@ class _MainPageState extends State<MainPage> {
     _api.getExchangeRate('GBP', 'AUD').then((double val) => setState(() {
           _topToBottomRate = val;
           _topController.text = "1";
-          _bottomController.text =
-              (1 * _topToBottomRate)
-                  .toStringAsFixed(2);
+          _bottomController.text = (1 * _topToBottomRate).toStringAsFixed(2);
         }));
 
     super.initState();
@@ -38,7 +46,12 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(child: _buildMainPage(context)),
+      body: GestureDetector(
+        child: SingleChildScrollView(
+          child: _buildMainPage(context),
+        ),
+        onTap: () => FocusScope.of(context).requestFocus(new FocusNode()),
+      ),
     );
   }
 
@@ -59,14 +72,17 @@ class _MainPageState extends State<MainPage> {
         Container(
           decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(color: red, width: 10)),
+              color: secondary,
+              border: Border.all(color: primary, width: 10)),
           width: MediaQuery.of(context).size.width / 3,
           height: MediaQuery.of(context).size.width / 3,
-          child: Icon(
-              _isTopToBottom ? Icons.arrow_downward : Icons.arrow_upward,
-              size: MediaQuery.of(context).size.width / 4,
-              color: red),
+          child: IconButton(
+            onPressed: () => _switchDirection(),
+            icon: Icon(
+                _isTopToBottom ? Icons.arrow_downward : Icons.arrow_upward,
+                size: MediaQuery.of(context).size.width / 4,
+                color: primary),
+          ),
         ),
       ],
     );
@@ -74,7 +90,7 @@ class _MainPageState extends State<MainPage> {
 
   Widget _buildTopHalf(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: red),
+      decoration: BoxDecoration(color: primary),
       child: Column(
         verticalDirection: VerticalDirection.up,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -86,7 +102,7 @@ class _MainPageState extends State<MainPage> {
               'GBP',
               style: TextStyle(
                 fontSize: 32,
-                color: white,
+                color: secondary,
               ),
             ),
           ),
@@ -94,16 +110,17 @@ class _MainPageState extends State<MainPage> {
             margin: EdgeInsets.only(top: 20),
             alignment: Alignment.center,
             child: TextField(
-              cursorColor: red,
+              cursorColor: primary,
               keyboardType: TextInputType.number,
               enableInteractiveSelection: false,
               textAlign: TextAlign.center,
               decoration: InputDecoration.collapsed(hintText: ""),
               controller: _topController,
+              onTap: () => _clearControllers(),
               onChanged: (String val) => _onTopTextChanged(val),
               style: TextStyle(
                 fontSize: 100,
-                color: white,
+                color: secondary,
               ),
             ),
           ),
@@ -113,7 +130,7 @@ class _MainPageState extends State<MainPage> {
             child: Text(
               'Pound Sterling',
               style: TextStyle(
-                color: white,
+                color: secondary,
                 fontSize: 30,
               ),
             ),
@@ -126,7 +143,7 @@ class _MainPageState extends State<MainPage> {
   Widget _buildBottomHalf(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: white,
+        color: secondary,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -138,7 +155,7 @@ class _MainPageState extends State<MainPage> {
               'AUD',
               style: TextStyle(
                 fontSize: 32,
-                color: red,
+                color: primary,
               ),
             ),
           ),
@@ -147,15 +164,16 @@ class _MainPageState extends State<MainPage> {
             alignment: Alignment.center,
             child: TextField(
               keyboardType: TextInputType.number,
-              cursorColor: white,
+              cursorColor: secondary,
               enableInteractiveSelection: false,
               textAlign: TextAlign.center,
               decoration: InputDecoration.collapsed(hintText: ""),
               controller: _bottomController,
+              onTap: () => _clearControllers(),
               onChanged: (String val) => _onBottomTextChanged(val),
               style: TextStyle(
                 fontSize: 100,
-                color: red,
+                color: primary,
               ),
             ),
           ),
@@ -165,7 +183,7 @@ class _MainPageState extends State<MainPage> {
             child: Text(
               'Australian Dollar',
               style: TextStyle(
-                color: red,
+                color: primary,
                 fontSize: 30,
               ),
             ),
@@ -177,18 +195,44 @@ class _MainPageState extends State<MainPage> {
 
   void _onTopTextChanged(String val) {
     setState(() {
-      _bottomController.text = (double.parse(val) *
-              _topToBottomRate)
-          .toStringAsFixed(2);
-      _isTopToBottom = true;
+      if (val.isEmpty) {
+        _bottomController.text = "";
+      } else {
+        _bottomController.text =
+            (double.parse(val) * _topToBottomRate).toStringAsFixed(2);
+        _isTopToBottom = true;
+      }
     });
   }
 
   void _onBottomTextChanged(String val) {
     setState(() {
-      _topController.text = (double.parse(val) *
-              (1 / _topToBottomRate)).toStringAsFixed(2);
-      _isTopToBottom = false;
+      if (val.isEmpty) {
+        _topController.text = "";
+      } else {
+        _topController.text =
+            (double.parse(val) * (1 / _topToBottomRate)).toStringAsFixed(2);
+        _isTopToBottom = false;
+      }
+    });
+  }
+
+  void _clearControllers() {
+    _topController.clear();
+    _bottomController.clear();
+  }
+
+  void _switchDirection() {
+    setState(() {
+      String topTemp = _topController.text;
+      _topController.text = _bottomController.text;
+      _bottomController.text = topTemp;
+      _isTopToBottom = !_isTopToBottom;
+      if (_isTopToBottom) {
+        _onTopTextChanged(_topController.text);
+      } else {
+        _onBottomTextChanged(_bottomController.text);
+      }
     });
   }
 }

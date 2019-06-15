@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 
 import 'package:xchange/pages/main.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
-  
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays([]);
@@ -18,4 +21,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
